@@ -103,14 +103,14 @@ namespace speedcontroller{
 			CalculatedSteeringAngle_Pc = CalculatedSteeringAngle_Pc*-1;
 		}
 
-		//If there is not angular velocity request, steering angle is set to 0
-		if (0 == TargetAngularVelocity_Dps){
-			CalculatedSteeringAngle_Pc = 0;
+		// //If there is not angular velocity request, steering angle is set to 0
+		// if (0 == TargetAngularVelocity_Dps){
+		// 	CalculatedSteeringAngle_Pc = 0;
 			
-		//If there is no linear velocity request, steering angle is set to 0
-		} else if (CurrentTwistLinear_Mps <= 0){
-			CalculatedSteeringAngle_Pc = 0;
-		}
+		// //If there is no linear velocity request, steering angle is set to 0
+		// } else if (CurrentTwistLinear_Mps <= 0){
+		// 	CalculatedSteeringAngle_Pc = 0;
+		// }
 
 			//Saturate to Min/Max value
 		if (CalculatedSteeringAngle_Pc > MAX_STEER_ANG){
