@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     auto current_twist_pub = node->create_publisher<geometry_msgs::msg::TwistStamped>("sd_current_twist", 100);
     auto current_GPS_pub = node->create_publisher<sensor_msgs::msg::NavSatFix>("sd_current_GPS", 100);
 	auto current_IMU_pub = node->create_publisher<sensor_msgs::msg::Imu>("sd_imu_raw",100);
-    auto sd_control_pub = node->create_publisher<sd_msgs::msg::SDControl>("sd_control", 1); // in the original ROS1 interface from StreetDrone, this topic was latched.
+    auto sd_control_pub = node->create_publisher<sd_msgs::msg::SDControl>("sd_control", 10); // in the original ROS1 interface from StreetDrone, this topic was latched.
 
 
     rclcpp::Rate loop_rate(ROS_LOOP);
@@ -134,7 +134,9 @@ int main(int argc, char **argv)
 			CurrentTwistLinearSD_Mps_Final = CurrentTwistLinearCANImu_Mps;
 		} //Use the IMU speed source
 		else if (vehicle_can_speed_string==_sd_speed_source)  {
+			// NOTE : Using rpm as a current velocity source test
 			CurrentTwistLinearSD_Mps_Final = CurrentTwistLinearCANSD_Mps;
+
 		}else{
 			RCLCPP_WARN(node->get_logger(), "SD_Vehicle_Interface parameter for sd_speed_source is not valid\n");
 		}
@@ -183,6 +185,13 @@ int main(int argc, char **argv)
 
 				SD_Current_Control.steer = FinalDBWSteerRequest_Pc;
 				SD_Current_Control.torque = FinalDBWTorqueRequest_Pc;
+				// valores adicionados para debug
+				SD_Current_Control.current_velocity = CurrentTwistLinearSD_Mps_Final;
+				SD_Current_Control.target_velocity = TargetTwistLinear_Mps;
+				SD_Current_Control.p = P_Contribution_Pc;
+				SD_Current_Control.d = D_Contribution_Pc;
+				SD_Current_Control.i = I_Contribution_Pc;
+				SD_Current_Control.ff = FF_Contribution_Pc;
 				sd_control_pub->publish(SD_Current_Control);
 
 			}

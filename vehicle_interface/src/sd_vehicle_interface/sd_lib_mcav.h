@@ -93,6 +93,7 @@ namespace sd{
 		crc = crc8_data[crc ^ frame.data[7]];
 		frame.data[0] = crc;
 	}
+
 	
 	/*ParseRxCanDataSDCan
 	This function parses an input can frame, checks it's ID and updates appropriate variables with freshest data*/
@@ -106,23 +107,41 @@ namespace sd{
 			AutomationArmed_B = steer_automation_available && torque_automation_available;
 			AutomationGranted_B = steer_automation_granted && torque_automation_granted;
 			AutomationGranted_B = frame.data[7] & 0b00100010;
-		} else if (frame.id == 0x102) { // StreetDrone_Data_1
-			//Speed is 16bit, and .data is 8bit, the below processing fuses speed into a single 16bit variable. The /100 divider handles the signal resolution
-			uint8_t CurrentVelocity8bit = frame.data[0]; //Speed Actual kph low resolution
+		}// else if (frame.id == 0x102) { // StreetDrone_Data_1
+		// 	//Speed is 16bit, and .data is 8bit, the below processing fuses speed into a single 16bit variable. The /100 divider handles the signal resolution
+		// 	uint8_t CurrentVelocity8bit = frame.data[0]; //Speed Actual kph low resolution
 
-			uint8_t speed_HR_B1 = frame.data[6];
-			uint8_t speed_HR_B2 = frame.data[7];
-			uint16_t CurrentVelocity16bit = (speed_HR_B1 << 8) + speed_HR_B2; ////Speed Actual kph high resolution
+		// 	uint8_t speed_HR_B1 = frame.data[6];
+		// 	uint8_t speed_HR_B2 = frame.data[7];
+		// 	uint16_t CurrentVelocity16bit = (speed_HR_B1 << 8) + speed_HR_B2; ////Speed Actual kph high resolution
 
-			//To support older versions of XCU firmware which do not output high resolution speed. If high resolution speed == 0 (either standstill or does not exist) use low resolution speed.
-			if(CurrentVelocity16bit == 0){
-				CurrentLinearVelocity_Mps = (CurrentVelocity8bit*KPH_TO_MPS)/100.0;
-				// MCAV note: not sure why the speeds are scaled by 1/100. This is also missing the scaling factor of 0.5 present in CAN definition.
-				// Actual meters per second speed would be ((double)frame.data[0])*0.5*KPH_TO_MPS
-			}
-			else{
-				CurrentLinearVelocity_Mps = (CurrentVelocity16bit*KPH_TO_MPS);
-			}
+		// 	//To support older versions of XCU firmware which do not output high resolution speed. If high resolution speed == 0 (either standstill or does not exist) use low resolution speed.
+		// 	if(CurrentVelocity16bit == 0){
+		// 		CurrentLinearVelocity_Mps = (CurrentVelocity8bit*KPH_TO_MPS)/100.0;
+		// 		// MCAV note: not sure why the speeds are scaled by 1/100. This is also missing the scaling factor of 0.5 present in CAN definition.
+		// 		// Actual meters per second speed would be ((double)frame.data[0])*0.5*KPH_TO_MPS
+		// 	}
+		// 	else{
+		// 		CurrentLinearVelocity_Mps = (CurrentVelocity16bit*KPH_TO_MPS);
+		// 	}
+		//}
+		else if(frame.id == 0x118) { // StreetDrone_Data_3
+			int16_t FL_WheelSpeed_Rpm = (frame.data[0] << 8) + frame.data[1];
+			int16_t FR_WheelSpeed_Rpm = (frame.data[2] << 8) + frame.data[3];
+			int16_t RL_WheelSpeed_Rpm = (frame.data[4] << 8) + frame.data[5];
+			int16_t RR_WheelSpeed_Rpm = (frame.data[6] << 8) + frame.data[7];
+
+			// Used this print as a debugging tool to match rpm info with cantools parsing
+			//printf("FL_WheelSpeed_Rpm --> %f\nFR_WheelSpeed_Rpm --> %f\nRL_WheelSpeed_Rpm --> %f\nRR_WheelSpeed_Rpm --> %f\n", FL_WheelSpeed_Rpm*0.1, FR_WheelSpeed_Rpm*0.1, RL_WheelSpeed_Rpm*0.1, RR_WheelSpeed_Rpm*0.1);
+
+			// defining current rpm as simple rpm mean
+			double rear_rpm = (double(RL_WheelSpeed_Rpm + RR_WheelSpeed_Rpm)*0.1) / 2;
+			double front_rpm = (double(FR_WheelSpeed_Rpm + FL_WheelSpeed_Rpm)*0.1) / 2;
+
+			double f_vel = (front_rpm * 0.104720) * (530.2/1000);
+			double r_vel = (rear_rpm * 0.104720) * (562.2/1000);
+
+			CurrentLinearVelocity_Mps = fabs((f_vel + r_vel)/2);
 		}
 	}
 	/*Inputs
