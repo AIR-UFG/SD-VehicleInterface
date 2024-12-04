@@ -75,7 +75,7 @@ void TwistCommand_callback(const std::shared_ptr<geometry_msgs::msg::TwistStampe
 {
 	//Populate a twist angular and twist linear message with the received message from Ros topic and convert to deg/s
     TargetTwistAngular_Degps= (msg->twist.angular.z) * RAD_to_DEG;
-    TargetTwistLinear_Mps = msg->twist.linear.x / UNDO_STREETDRONE_SCALING_FACTOR;
+    TargetTwistLinear_Mps = msg->twist.linear.x;
 }
 
 void CurrentVelocity_callback(const std::shared_ptr<geometry_msgs::msg::TwistStamped> msg)
